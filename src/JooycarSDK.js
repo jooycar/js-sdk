@@ -23,12 +23,12 @@ class JooycarSDK {
     _private._currentTransactions = new Set()
     _private._rawConfig = config
 
-    this._host = HOST
-    this._domain_prefix = DOMAIN_PREFIX
-    this._api_namespace = API_NAMESPACE
-    this._version = VERSION
-    this._protocol = PROTOCOL
-    this._defaultModule = DEFAULT_MODULE
+    this._host = config.host || HOST
+    this._domain_prefix = config.domainPrefix || DOMAIN_PREFIX
+    this._api_namespace = config.apiNamespace || API_NAMESPACE
+    this._version = config.version || VERSION
+    this._protocol = config.protocol || PROTOCOL
+    this._defaultModule = config.protocol || DEFAULT_MODULE
     this._EventEmitter = new EventEmitter(this)
     this._logger = config.logger || logger(this)
 

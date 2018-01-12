@@ -1,4 +1,4 @@
-const { makeResource } = require('./Resource')
+const { makeResource } = require('../Resource')
 
 const list = makeResource({
   module: 'core',

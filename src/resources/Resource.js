@@ -37,7 +37,7 @@ class Resource {
     try {
       const result = await this._makeRequest(params)
       this._sdk._EventEmitter.emit('resource:finishFetching', { transactionId })
-      // this._sdk._logger.info(result)
+      // this._sdk._logger.info("fetch finished")
       return result
     } catch (err) {
       this._sdk._logger.error(err)

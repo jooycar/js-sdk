@@ -1,5 +1,6 @@
 const models = {
-  brand: require('./brand')
+  brand: require('./core/brand'),
+  models: require('./core/models')
 }
 
 const injectSDK = (obj, sdk) => {
