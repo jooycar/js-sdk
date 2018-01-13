@@ -8,8 +8,8 @@ const main = async () => {
   })
 
   JC.on('startFetching', () => console.log('SDK started fetching'))
-  // JC.on('resource:finishFetching', () => console.log('resource is fetching'))
-  JC.on('finishFetching', () => console.log('SDK finished fetching'))
+  // JC.on('resource:endFetching', () => console.log('resource is fetching'))
+  JC.on('endFetching', () => console.log('SDK finished fetching'))
   JC.on('resourcesFetched', (val) => console.log('SDK Resources fetched', val))
   
   try {

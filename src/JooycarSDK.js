@@ -38,7 +38,7 @@ class JooycarSDK {
     if (config.secret) _private.secret = config.secret || DEFAULT_SECRET
 
     this.on('resource:startFetching', this._handleStartFetching)
-    this.on('resource:finishFetching', this._handleFinishFetching)
+    this.on('resource:endFetching', this._handleEndFetching)
   }
 
   _getTransactionId() {
@@ -54,11 +54,11 @@ class JooycarSDK {
     }
   }
 
-  _handleFinishFetching({ transactionId }) {
+  _handleEndFetching({ transactionId }) {
     const _private = internal(this)
     _private._currentTransactions.delete(transactionId)
     if (_private._currentTransactions.size === 0) {
-      this._EventEmitter.emit('finishFetching')
+      this._EventEmitter.emit('endFetching')
     }
   }
 
