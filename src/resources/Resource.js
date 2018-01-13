@@ -21,7 +21,7 @@ class Resource {
     this._sdk._EventEmitter.emit('resource:startFetching', { transactionId })
     this._makeRequest(params)
       .then(result => {
-        this._sdk._EventEmitter.emit('resource:finishFetching', { transactionId })
+        this._sdk._EventEmitter.emit('resource:endFetching', { transactionId })
         this.SDK._logger.info(result)
         cb(null, result)
       })
@@ -36,12 +36,11 @@ class Resource {
     this._sdk._EventEmitter.emit('resource:startFetching', { transactionId })
     try {
       const result = await this._makeRequest(params)
-      this._sdk._EventEmitter.emit('resource:finishFetching', { transactionId })
-      // this._sdk._logger.info("fetch finished")
+      this._sdk._EventEmitter.emit('resource:endFetching', { transactionId })
       return result
     } catch (err) {
       this._sdk._logger.error(err)
-      this._sdk._EventEmitter.emit('resource:finishFetching', { transactionId })
+      this._sdk._EventEmitter.emit('resource:endFetching', { transactionId })
       throw (err)
     }
   }
@@ -50,7 +49,7 @@ class Resource {
     const protocol = this.protocol
     const prefix = this._sdk._domain_prefix
     const host = this._sdk._host
-    const namespace = this._sdk._api_namespace
+    const namespace = this._sdk._apiNamespace
     const version = this.version
     const module = this.module
     const command = this.command

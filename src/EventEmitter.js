@@ -91,6 +91,8 @@ class EventEmitter {
   }
 
   emit(event, ...args) {
+    const self = internal(this)
+    self._sdk._logger.debug(`EventEmitter:emit:${event}`, args)
     const evObjs = _callbacks[event]
     if (evObjs) {
       for (let ev of evObjs) {

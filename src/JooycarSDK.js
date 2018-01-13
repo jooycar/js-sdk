@@ -11,6 +11,7 @@ const DEFAULT_MODULE = 'core'
 const PROTOCOL = 'https'
 const DEFAULT_KEY = 'jooycar'
 const DEFAULT_SECRET = 'jooycar'
+const DEBUG_MODE = false
 
 const privateProps = new WeakMap()
 const internal = internalProp(privateProps)
@@ -23,9 +24,10 @@ class JooycarSDK {
     _private._currentTransactions = new Set()
     _private._rawConfig = config
 
+    this._debug = config.debug || DEBUG_MODE
     this._host = config.host || HOST
     this._domain_prefix = config.domainPrefix || DOMAIN_PREFIX
-    this._api_namespace = config.apiNamespace || API_NAMESPACE
+    this._apiNamespace = config.apiNamespace || API_NAMESPACE
     this._version = config.version || VERSION
     this._protocol = config.protocol || PROTOCOL
     this._defaultModule = config.protocol || DEFAULT_MODULE
@@ -61,20 +63,21 @@ class JooycarSDK {
   }
 
   async getResources() {
-    if (this.resources) {
-      this._logger.debug('JCSDK:getResources() - Cached')
-      this._EventEmitter.emit('RESOURCE:CACHE')
-      return this.resources
+    const _private = internal(this)
+    if (_private._resources) {
+      this._logger.debug('SDK:getResources() - Cached')
+      this._EventEmitter.emit('resourcesFetched', {fromCache: true})
+      return _private._resources
     }
     const resources = await resourceFactory(this)
-    this._resources = resources
-    this._logger.debug('JCSDK:getResources() - Async')
-    this._EventEmitter.emit('RESOURCE:ASYNC')
-    return this._resources
+    _private._resources = resources
+    this._logger.debug('SDK:getResources() - Async')
+    this._EventEmitter.emit('resourcesFetched', {fromCache: false})
+    return resources
   }
 
-  isFething() {
-    return this._currentTransactions.size() > 0
+  isFetching() {
+    return this._currentTransactions.size > 0
   }
 
   on(event, cb, context = this) {
