@@ -34,23 +34,12 @@ class Resource {
   }
 
   fetch(params, cb) {
-    const _private = internal(this)
-    const sdk = _private._sdk
-    const emitter = sdk._EventEmitter
-    const logger = sdk._logger
-    const transactionId = sdk._getTransactionId()
-
-    emitter.emit('resource:startFetching', { transactionId })
-    this._makeRequest(params)
-      .then(result => {
-        emitter.emit('resource:endFetching', { transactionId })
-        logger.info(result)
-        cb(null, result)
-      })
-      .catch(err => {
-        logger.error(err)
-        cb(err)
-      })
+    if (typeof params === 'function' && !cb) cb = params
+    if (typeof cb !== 'function') return this._fetchAsync(params)
+    
+    this._fetchAsync(params)
+      .then(result => cb(null, result))
+      .catch(cb)
   }
 
   addParams(params = {}) {
@@ -63,7 +52,7 @@ class Resource {
     _private._params = params
   }
 
-  async fetchAsync(providedParams = {}) {
+  async _fetchAsync(providedParams = {}) {
     const _private = internal(this)
     const sdk = _private._sdk
     const emitter = sdk._EventEmitter
@@ -83,14 +72,18 @@ class Resource {
   }
 
   then() {
-    const promise = this.fetchAsync()
+    const promise = this._fetchAsync()
     return promise.then.apply(promise, arguments)
   }
 
   async _makeRequest(json = {}) {
+    const _private = internal(this)
     const headers = this.headers || {}
     const endpoint = this._endpoint()
-    const result = await request[this.method](endpoint, { json, headers }).json
+    const req = await request[this.method](endpoint, { json, headers })
+    if (_private._sdk._debug) _private._sdk._logger.debug(`Fetching: ${endpoint}`)
+    if (_private._sdk._debug) _private._sdk._logger.debug(req)
+    const result = req.json
     return result
   }
 

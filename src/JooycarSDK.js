@@ -11,6 +11,7 @@ const DEFAULT_MODULE = 'core'
 const PROTOCOL = 'https'
 const DEFAULT_KEY = 'jooycar'
 const DEFAULT_SECRET = 'jooycar'
+const DEFAULT_EXTENSION = null
 const DEBUG_MODE = false
 const DEFAULT_RESOURCES_SPEC = {command: 'resources'}
 
@@ -37,6 +38,7 @@ class JooycarSDK {
     this._host = config.host || HOST
     this._domainPrefix = config.domainPrefix || DOMAIN_PREFIX
     this._apiNamespace = config.apiNamespace || API_NAMESPACE
+    this._extension = config.extension || DEFAULT_EXTENSION
     this._version = config.version || VERSION
     this._protocol = config.protocol || PROTOCOL
     this._module = config.protocol || DEFAULT_MODULE
@@ -134,6 +136,9 @@ class JooycarSDK {
   }
 
   addResource(spec, action, model) {
+    if (!validSpec(spec))
+        throw new Error("Invalid resource specification")
+
     const resourceName = model || spec.model || spec.command
     const resourceAction = action || spec.action || spec.method || 'get'
 
@@ -141,7 +146,7 @@ class JooycarSDK {
     const actionObj = {[resourceAction]: resourceFactory(spec)(this)}
     const resource = {[resourceName]: actionObj}
     this._addResources(resource)
-    
+
     return resource
   }
 

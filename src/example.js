@@ -12,7 +12,7 @@ const main = async () => {
     command: 'resources',
     extension: 'json'
   }
-  
+
   const JC = new JooycarSDK({
     key: 'jooycar',
     secret: 'jooycar',
@@ -20,21 +20,20 @@ const main = async () => {
     resourcesSpec
   })
 
-  JC.on('resource:endFetching', () => console.log('resource is fetching'))
+  // JC.on('resource:endFetching', () => console.log('resource is fetching'))
   JC.on('startFetching', () => console.log('SDK started fetching'))
   JC.on('endFetching', () => console.log('SDK finished fetching'))
-  JC.on('resourcesFetched', (val) => console.log('SDK Resources fetched', val))
+  JC.on('resourcesReady', (val) => console.log('SDK Resources fetched', val))
 
   const { models, brands } = await JC.loadResources(/* resourcesSpec */)
 
-  // const { brands } = JC.addResource({command: 'brands'}, 'listAll')
+  // const { brands } = JC.addResource({command: 'brands'}, 'list')
   // const { models } = JC.addResource({command: 'models'})
 
-  // console.log(JC.describeResources())
-  // console.log(brands.listAll)
-
+  console.log(JC.describeResources())
+  
   const brandList = await brands.list
-  console.log(brandList)
+  console.log("brands count", brandList.length)
 }
 
 main()
