@@ -1,5 +1,6 @@
 const { internalProp } = require('./utils')
-const resourceFactory = require('./resources')
+const { resourceFactory } = require('./Resource')
+const resourceLoader = require('./resources')
 const EventEmitter = require('./EventEmitter')
 const logger = require('./logger')
 
@@ -23,6 +24,8 @@ class JooycarSDK {
     _private._transactionCounter = 0
     _private._currentTransactions = new Set()
     _private._rawConfig = config
+    _private._resources = {}
+    _private._resourcesLoaded = false
 
     this._debug = config.debug || DEBUG_MODE
     this._host = config.host || HOST
@@ -30,7 +33,7 @@ class JooycarSDK {
     this._apiNamespace = config.apiNamespace || API_NAMESPACE
     this._version = config.version || VERSION
     this._protocol = config.protocol || PROTOCOL
-    this._defaultModule = config.protocol || DEFAULT_MODULE
+    this._module = config.protocol || DEFAULT_MODULE
     this._EventEmitter = new EventEmitter(this)
     this._logger = config.logger || logger(this)
 
@@ -62,18 +65,41 @@ class JooycarSDK {
     }
   }
 
+  _addResources(resources) {
+    const _private = internal(this)
+    Object.assign(_private._resources, resources)
+  }
+
+  describeResources() {
+    const _private = internal(this)
+    return _private._resources
+  }
+
   async getResources() {
     const _private = internal(this)
-    if (_private._resources) {
+    if (_private._resourcesLoaded) {
       this._logger.debug('SDK:getResources() - Cached')
       this._EventEmitter.emit('resourcesFetched', {fromCache: true})
       return _private._resources
     }
-    const resources = await resourceFactory(this)
-    _private._resources = resources
+    const resources = await resourceLoader(this)
+    this._addResources(resources)
+    _private._resourcesLoaded = true
     this._logger.debug('SDK:getResources() - Async')
     this._EventEmitter.emit('resourcesFetched', {fromCache: false})
     return resources
+  }
+
+  loadResource(spec, action, model) {
+    const resourceName = model || spec.model || spec.command
+    const resourceAction = action || spec.action || spec.method || 'get'
+
+    if (!resourceName) throw new Error("Missing resource name")
+    const actionObj = {[resourceAction]: resourceFactory(spec)(this)}
+    const resource = {[resourceName]: actionObj}
+    this._addResources(resource)
+    
+    return resource
   }
 
   isFetching() {

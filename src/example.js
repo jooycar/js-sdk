@@ -8,18 +8,18 @@ const main = async () => {
   })
 
   JC.on('startFetching', () => console.log('SDK started fetching'))
-  // JC.on('resource:endFetching', () => console.log('resource is fetching'))
+  JC.on('resource:endFetching', () => console.log('resource is fetching'))
   JC.on('endFetching', () => console.log('SDK finished fetching'))
   JC.on('resourcesFetched', (val) => console.log('SDK Resources fetched', val))
-  
-  try {
-    await JC.getResources()
-    const { brand, models } = await JC.getResources()
-    await Promise.all([1, 2, 3].map(_ => brand.list.fetchAsync()))
-    console.log('Got brands several times')
-  } catch (error) {
-    console.log(error)
-  }
+
+  const { brands } = JC.loadResource({command: 'brands'}, 'listAll')
+  const { models } = JC.loadResource({command: 'models'})
+
+  console.log(JC.describeResources())
+  console.log(brands.listAll)
+
+  const brandList = await brands.listAll
+  console.log(brandList)
 }
 
 main()
