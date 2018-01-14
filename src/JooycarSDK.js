@@ -1,6 +1,5 @@
 const { internalProp } = require('./utils')
 const { resourceFactory } = require('./Resource')
-const resourceLoader = require('./resources')
 const EventEmitter = require('./EventEmitter')
 const logger = require('./logger')
 
@@ -13,23 +12,30 @@ const PROTOCOL = 'https'
 const DEFAULT_KEY = 'jooycar'
 const DEFAULT_SECRET = 'jooycar'
 const DEBUG_MODE = false
+const DEFAULT_RESOURCES_SPEC = {command: 'resources'}
 
 const privateProps = new WeakMap()
 const internal = internalProp(privateProps)
 
+const validSpec = spec => {
+  return typeof spec == 'object' && spec.hasOwnProperty('command')
+}
+
 class JooycarSDK {
   constructor(config = {}) {
     const _private = internal(this)
+    const resourcesSpec = config.resourcesSpec || DEFAULT_RESOURCES_SPEC
 
     _private._transactionCounter = 0
     _private._currentTransactions = new Set()
     _private._rawConfig = config
     _private._resources = {}
     _private._resourcesLoaded = false
+    _private._resourcesSpec = resourcesSpec
 
     this._debug = config.debug || DEBUG_MODE
     this._host = config.host || HOST
-    this._domain_prefix = config.domainPrefix || DOMAIN_PREFIX
+    this._domainPrefix = config.domainPrefix || DOMAIN_PREFIX
     this._apiNamespace = config.apiNamespace || API_NAMESPACE
     this._version = config.version || VERSION
     this._protocol = config.protocol || PROTOCOL
@@ -42,6 +48,13 @@ class JooycarSDK {
 
     this.on('resource:startFetching', this._handleStartFetching)
     this.on('resource:endFetching', this._handleEndFetching)
+    this._init()
+  }
+
+  _init() {
+    const _private = internal(this)
+    const resourcesSpec = _private._resourcesSpec
+    _private._resourcesResource = resourceFactory(resourcesSpec)(this)
   }
 
   _getTransactionId() {
@@ -75,22 +88,52 @@ class JooycarSDK {
     return _private._resources
   }
 
-  async getResources() {
+  flushResources() {
     const _private = internal(this)
-    if (_private._resourcesLoaded) {
-      this._logger.debug('SDK:getResources() - Cached')
-      this._EventEmitter.emit('resourcesFetched', {fromCache: true})
-      return _private._resources
-    }
-    const resources = await resourceLoader(this)
-    this._addResources(resources)
-    _private._resourcesLoaded = true
-    this._logger.debug('SDK:getResources() - Async')
-    this._EventEmitter.emit('resourcesFetched', {fromCache: false})
-    return resources
+    _private._resources = {}
+    _private._resourcesLoaded = false
   }
 
-  loadResource(spec, action, model) {
+  async loadResources(spec) {
+    const _private = internal(this)
+
+    if (spec && spec !== _private._resourcesSpec) {
+      this.flushResources()
+    }
+
+    if (_private._resourcesLoaded) {
+      this._logger.debug('SDK:getResources() - Cached')
+      this._EventEmitter.emit('resourcesReady', {fromCache: true})
+      return _private._resources
+    }
+
+    if (spec) {
+      if (!validSpec(spec))
+        throw new Error("Invalid resource specification")
+
+      _private._resourcesResource = resourceFactory(spec)(this)
+    }
+
+    const resourcesSpecs = await _private._resourcesResource
+    
+    for (let s of resourcesSpecs) {
+      if (!validSpec(s)) {
+        this._logger.warn(`Invalid remote resource specification ${s}`)
+        continue
+      }
+
+      this.addResource(s)
+    }
+
+    _private._resourcesLoaded = true
+
+    this._logger.debug('SDK:getResources() - Remote')
+    this._EventEmitter.emit('resourcesReady', {fromCache: false})
+
+    return _private._resources
+  }
+
+  addResource(spec, action, model) {
     const resourceName = model || spec.model || spec.command
     const resourceAction = action || spec.action || spec.method || 'get'
 

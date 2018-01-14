@@ -8,15 +8,21 @@ const SILENT_FETCH = false
 const PAGINATION_ENABLED = false
 const PAGE_SIZE = 10
 
+const truthy = val => val !== null && val !== undefined
+
 class Resource {
   constructor(sdk, spec) {
     const _private = internal(this)
-
     if (!spec.command) throw new Error("Resource spec without command")
+    this.domainPrefix = truthy(spec.domainPrefix) ? spec.domainPrefix : sdk._domainPrefix
+    this.host = spec.host || sdk._host
+    this.namespace = truthy(spec.namespace) ? spec.namespace : sdk._apiNamespace
+    this.version = truthy(spec.version) ? spec.version : sdk._version
+    this.module = truthy(spec.module) ? spec.module : sdk._module
+    this.extension = truthy(spec.extension) ? spec.extension : sdk._extension
     this.method = (spec.method || 'GET').toLowerCase()
-    this.module = spec.module || sdk._module
     this.protocol = spec.protocol || sdk._protocol
-    this.version = spec.version || sdk._version
+    this.port = spec.port || sdk._port
     this.command = spec.command
     this.silentFetch = spec.silentFetch || SILENT_FETCH
     this.paginationEnabled = spec.paginationEnabled || PAGINATION_ENABLED
@@ -82,19 +88,23 @@ class Resource {
   }
 
   async _makeRequest(json = {}) {
-    const _private = internal(this)
-    const sdk = _private._sdk
-    const protocol = this.protocol
-    const prefix = sdk._domain_prefix
-    const host = sdk._host
-    const namespace = sdk._apiNamespace
-    const version = this.version
-    const module = this.module
-    const command = this.command
-    const endpoint = `${protocol}://${prefix}.${host}/${namespace}/${version}/${module}/${command}`
     const headers = this.headers || {}
+    const endpoint = this._endpoint()
     const result = await request[this.method](endpoint, { json, headers }).json
     return result
+  }
+
+  _endpoint() {
+    const protocol = this.protocol
+    const prefix = this.domainPrefix ? this.domainPrefix + '.' : ''
+    const host = this.host
+    const namespace = this.namespace ? '/' + this.namespace : ''
+    const version = this.version ? '/' + this.version : ''
+    const module = this.module ? '/' + this.module : ''
+    const command = this.command
+    const port = this.port ? ':' + this.port : ''
+    const extension = this.extension ? '.' + this.extension : ''
+    return `${protocol}://${prefix}${host}${port}${namespace}${version}${module}/${command}${extension}`
   }
 }
 

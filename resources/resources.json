@@ -1,0 +1,14 @@
+[
+  {
+    "module": "core",
+    "method": "GET",
+    "command": "models",
+    "action": "list"
+  },
+  {
+    "module": "core",
+    "method": "GET",
+    "command": "brands",
+    "action": "list"
+  }
+]
