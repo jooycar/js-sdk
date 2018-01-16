@@ -103,14 +103,39 @@ class EventEmitter {
     return this
   }
 
-  // TODO: Implement method to remove handlers
-  remove(event, cb = null) {
-
+  clear() {
+    internal(this)._events.clear()
+    _callbacks = {}
+    return this
   }
 
-  // TODO: Implement callback that only execute once
+  remove(event, cb = null) {
+    const self = internal(this)
+
+    if (this._has(event)) {
+      if (cb === null) {
+        self._events.delete(event)
+        _callbacks[event] = null
+      } else {
+        const cbIdx = this._getCallbackIndex(event, cb)
+
+        if (cbIdx !== -1) {
+          this._getCallbacks(event).splice(cbIdx, 1)
+          this.remove(...arguments)
+        }
+      }
+    }
+
+    return this
+  }
+
   once(event, callback, context = null, weight = 1) {
-    
+    const onceCallback = (...args) => {
+      this.remove(event, onceCallback)
+      return callback.call(context, args)
+    }
+
+    return this.on(event, onceCallback, context, weight)
   }
 }
 
