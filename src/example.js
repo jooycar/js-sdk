@@ -6,7 +6,7 @@ const apiKey = '...'
 
 void async function() {
   try {
-    const SDK = new JooycarSDK({ apiKey, resourcesSpec })
+    const SDK = new JooycarSDK({ apiKey })
     await SDK.login(username, password)
     const { trip } = await sdk.resources()
 

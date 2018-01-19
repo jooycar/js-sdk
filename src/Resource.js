@@ -10,9 +10,6 @@ const PAGE_SIZE = 10
 
 const truthy = val => val !== null && val !== undefined
 
-/**
- * @ignore
- */
 class Resource {
   constructor(sdk, spec) {
     const _private = internal(this)

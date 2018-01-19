@@ -67,6 +67,8 @@ class JooycarSDK {
   /**
    * The constructor of the JooycarSDK recieves a single parameter with a configuration object.
    * @param {Object} config configuration object
+   * @example
+   * const SDK = new JooycarSDK({apiKey: ''})
    */
   constructor(config = {}) {
     const _private = internal(this)
@@ -290,6 +292,9 @@ class JooycarSDK {
    * @param {string} email User email
    * @param {string} password User password
    * @return {Object} Resources object
+   * @example
+   * const SDK = new JooycarSDK({ apiKey })
+   * await SDK.login('username', 'password')
    */
   async login(email, password) {
     const _private = internal(this)
@@ -309,6 +314,10 @@ class JooycarSDK {
   /**
    * Logout the currently logged user (if there is any) an return the default logged out resources.
    * @return {Object} Logout the user and return the default resources for not logged SDK
+   * @example
+   * const SDK = new JooycarSDK({ apiKey })
+   * await SDK.login('username', 'password')
+   * await SDK.logout()
    */
   async logout() {
     const _private = internal(this)
@@ -321,6 +330,11 @@ class JooycarSDK {
   /**
    * Boolean that informs whether the SDK is currently logged as a user or not
    * @return {Boolean} boolean indicating if the SDK is logged
+   * @example
+   * const SDK = new JooycarSDK({ apiKey })
+   * console.log(SDK.isLogged()) // false
+   * await SDK.login('username', 'password')
+   * console.log(SDK.isLogged()) // true
    */
   isLogged() {
     const _private = internal(this)
@@ -329,6 +343,14 @@ class JooycarSDK {
 
   /**
    * @return {Boolean} boolean indicating if the SDK is currently fetching any resource
+   * @example
+   * const SDK = new JooycarSDK({ apiKey })
+   * const { brands } = await sdk.resources()
+   * trip.list.then(() => console.log(SDK.isFetching()))
+   * console.log(SDK.isFetching())
+   * 
+   * // true
+   * // false
    */
   isFetching() {
     return this._currentTransactions.size > 0
