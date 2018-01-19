@@ -1,4 +1,4 @@
-const request = require('./request')
+const request = require('./Request')
 const { internalProp } = require('./utils')
 
 const privateProps = new WeakMap()
@@ -10,6 +10,9 @@ const PAGE_SIZE = 10
 
 const truthy = val => val !== null && val !== undefined
 
+/**
+ * @ignore
+ */
 class Resource {
   constructor(sdk, spec) {
     const _private = internal(this)
@@ -22,6 +25,8 @@ class Resource {
     this.extension = truthy(spec.extension) ? spec.extension : sdk._extension
     this.method = (spec.method || 'GET').toLowerCase()
     this.protocol = spec.protocol || sdk._protocol
+    this.basepath = spec.basepath || sdk._basepath
+    this.headers = {}
     this.port = spec.port || sdk._port
     this.command = spec.command
     this.silentFetch = spec.silentFetch || SILENT_FETCH
@@ -40,6 +45,11 @@ class Resource {
     this._fetchAsync(params)
       .then(result => cb(null, result))
       .catch(cb)
+  }
+
+  setToken(token) {
+    const _private = internal(this)
+    _private._resourceToken = token
   }
 
   addParams(params = {}) {
@@ -76,10 +86,22 @@ class Resource {
     return promise.then.apply(promise, arguments)
   }
 
+  setHeader(key, val) {
+    if (typeof key === "object") {
+      for (k in key) {
+        this.setHeader(k, key[k])
+      }
+      return
+    }
+    
+    Object.assign(this.headers, {[key]: val})
+  }
+
   async _makeRequest(json = {}) {
     const _private = internal(this)
-    const headers = this.headers || {}
-    const endpoint = this._endpoint()
+    const token = _private._resourceToken || _private._sdk._key
+    const headers = Object.assign(this.headers, {'Authorization': `Bearer ${token}`})
+    const endpoint = this.endpoint(json)
     const req = await request[this.method](endpoint, { json, headers })
     if (_private._sdk._debug) _private._sdk._logger.debug(`Fetching: ${endpoint}`)
     if (_private._sdk._debug) _private._sdk._logger.debug(req)
@@ -87,17 +109,21 @@ class Resource {
     return result
   }
 
-  _endpoint() {
+  endpoint(params = {}) {
     const protocol = this.protocol
     const prefix = this.domainPrefix ? this.domainPrefix + '.' : ''
     const host = this.host
+    const basepath = this.basepath ? '/' + this.basepath : ''
     const namespace = this.namespace ? '/' + this.namespace : ''
     const version = this.version ? '/' + this.version : ''
     const module = this.module ? '/' + this.module : ''
-    const command = this.command
     const port = this.port ? ':' + this.port : ''
     const extension = this.extension ? '.' + this.extension : ''
-    return `${protocol}://${prefix}${host}${port}${namespace}${version}${module}/${command}${extension}`
+    const command = this.command ? '/' + this.command : ''
+    const endpoint = `${protocol}://${prefix}${host}${port}${basepath}${namespace}${version}${module}${command}${extension}`
+    return Object.keys(params).reduce((url, key) => {
+      return url.split(`:${key}`).join(params[key])
+    }, endpoint)
   }
 }
 

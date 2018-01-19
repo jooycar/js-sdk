@@ -18,6 +18,9 @@ const makeBody = value => {
   return value
 }
 
+/**
+ * @ignore
+ */
 class Request {
   constructor (...args) {
     this.opts = { method: 'GET' }

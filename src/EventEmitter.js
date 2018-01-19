@@ -4,6 +4,9 @@ let _callbacks = {}
 const privateProps = new WeakMap()
 const internal = internalProp(privateProps)
 
+/**
+ * @ignore
+ */
 class EventEmitter {
   constructor(sdk, config = {}) {
     const self = internal(this)
