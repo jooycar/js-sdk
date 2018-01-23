@@ -1,5 +1,5 @@
-const request = require('./Request')
-const { internalProp } = require('./utils')
+import request from './Request'
+import { internalProp } from './utils'
 
 const privateProps = new WeakMap()
 const internal = internalProp(privateProps)
@@ -7,16 +7,16 @@ const internal = internalProp(privateProps)
 const SILENT_FETCH = false
 const PAGINATION_ENABLED = false
 const PAGE_SIZE = 10
-
+const isObjEmpty = obj => Object.keys(obj).length === 0 && obj.constructor === Object
 const truthy = val => val !== null && val !== undefined
 
-class Resource {
+export default class Resource {
   constructor(sdk, spec) {
     const _private = internal(this)
-    if (!spec.command) throw new Error("Resource spec without command")
+    if (!spec.module) throw new Error("Resource spec without module")
     this.domainPrefix = truthy(spec.domainPrefix) ? spec.domainPrefix : sdk._domainPrefix
     this.host = spec.host || sdk._host
-    this.namespace = truthy(spec.namespace) ? spec.namespace : sdk._apiNamespace
+    this.namespace = truthy(spec.namespace) ? spec.namespace : sdk._namespace
     this.version = truthy(spec.version) ? spec.version : sdk._version
     this.module = truthy(spec.module) ? spec.module : sdk._module
     this.extension = truthy(spec.extension) ? spec.extension : sdk._extension
@@ -94,12 +94,13 @@ class Resource {
     Object.assign(this.headers, {[key]: val})
   }
 
-  async _makeRequest(json = {}) {
+  async _makeRequest(json = null) {
     const _private = internal(this)
-    const token = _private._resourceToken || _private._sdk._key
-    const headers = Object.assign(this.headers, {'Authorization': `Bearer ${token}`})
+    const token = _private._resourceToken || _private._sdk._apiKey
+    const headers = Object.assign(this.headers, token ? {'Authorization': `Bearer ${token}`} : {})
     const endpoint = this.endpoint(json)
-    const req = await request[this.method](endpoint, { json, headers })
+    const params = Object.assign({ headers }, this.method === 'get' || isObjEmpty(json) ? {} : {json})
+    const req = await request[this.method](endpoint, params)
     if (_private._sdk._debug) _private._sdk._logger.debug(`Fetching: ${endpoint}`)
     if (_private._sdk._debug) _private._sdk._logger.debug(req)
     const result = req.json
@@ -112,7 +113,7 @@ class Resource {
     const host = this.host
     const basepath = this.basepath ? '/' + this.basepath : ''
     const namespace = this.namespace ? '/' + this.namespace : ''
-    const version = this.version ? '/' + this.version : ''
+    const version = this.version ? '/v' + this.version : ''
     const module = this.module ? '/' + this.module : ''
     const port = this.port ? ':' + this.port : ''
     const extension = this.extension ? '.' + this.extension : ''
@@ -124,9 +125,4 @@ class Resource {
   }
 }
 
-const resourceFactory = spec => sdk => new Resource(sdk, spec)
-
-module.exports = {
-  Resource,
-  resourceFactory
-}
+export const resourceFactory = spec => sdk => new Resource(sdk, spec)

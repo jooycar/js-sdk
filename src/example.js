@@ -1,5 +1,4 @@
-const JooycarSDK = require('./JooycarSDK')
-
+import JooycarSDK from './JooycarSDK'
 const username = 'username@example.com'
 const password = 'password'
 const apiKey = '...'

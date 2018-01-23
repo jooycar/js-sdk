@@ -1,7 +1,7 @@
-if (!process.browser) {
-  global.fetch = require('node-fetch')
-  global.Headers = global.fetch.Headers
-}
+// if (!process.browser) {
+//   global.fetch = require('node-fetch')
+//   global.Headers = global.fetch.Headers
+// }
 
 const caseless = require('caseless')
 const toTypedArray = require('typedarray-to-buffer')

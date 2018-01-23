@@ -1,33 +1,38 @@
-const { internalProp } = require('./utils')
-const { resourceFactory } = require('./Resource')
-const EventEmitter = require('./EventEmitter')
-const logger = require('./logger')
+import { internalProp } from './utils'
+import { resourceFactory }  from './Resource'
+import EventEmitter from './EventEmitter'
+import {logger} from './logger'
 
 const HOST = 'jooycar.com'
 const DOMAIN_PREFIX = 'api01'
-const API_NAMESPACE = 'api'
-const VERSION = 'V1'
-const DEFAULT_MODULE = 'core'
+const BASEPATH = 'api'
+const VERSION = '1'
+const NAMESPACE = 'core'
+const DEFAULT_MODULE = null
 const PROTOCOL = 'https'
-const DEFAULT_KEY = 'jooycar'
-const DEFAULT_SECRET = 'jooycar'
+const DEFAULT_KEY = null
 const DEFAULT_EXTENSION = null
 const DEBUG_MODE = false
-const DEFAULT_RESOURCES_SPEC = {command: 'resources'}
+const DEFAULT_RESOURCES_SPEC = {module: 'resources'}
 const USER_SPEC = {
-  "method": "POST",
-  "namespace": "enduser",
-  "modules": "auth",
+  "version": "1",
+  "module": "auth",
+  "model": "auth",
   "command": "local",
-  "action": "authenticate",
-  "model": "user"
+  "method": "POST",
+  "action": "login",
+  "namespace": "enduser"
 }
 
 const privateProps = new WeakMap()
 const internal = internalProp(privateProps)
 
 const validSpec = spec => {
-  return typeof spec == 'object' && spec.hasOwnProperty('command')
+  return(
+    typeof spec == 'object' &&
+    spec.hasOwnProperty('module') &&
+    spec.module
+  )
 }
 
 /**
@@ -62,7 +67,7 @@ const validSpec = spec => {
  *   }
  * }()
  */
-class JooycarSDK {
+export class SDK {
 
   /**
    * The constructor of the JooycarSDK recieves a single parameter with a configuration object.
@@ -105,7 +110,7 @@ class JooycarSDK {
      * @private
      * @ignore
      */
-    this._apiNamespace = config.apiNamespace || API_NAMESPACE
+    this._namespace = config.namespace || NAMESPACE
 
     /**
      * @private
@@ -123,13 +128,19 @@ class JooycarSDK {
      * @private
      * @ignore
      */
+    this._basepath = config.basepath || BASEPATH
+
+    /**
+     * @private
+     * @ignore
+     */
     this._protocol = config.protocol || PROTOCOL
 
     /**
      * @private
      * @ignore
      */
-    this._module = config.protocol || DEFAULT_MODULE
+    this._module = config.module || DEFAULT_MODULE
 
     /**
      * @private
@@ -147,7 +158,7 @@ class JooycarSDK {
      * @private
      * @ignore
      */
-    this._key = config.key || DEFAULT_KEY
+    this._apiKey = config.apiKey || DEFAULT_KEY
 
     this.on('resource:startFetching', this._handleStartFetching)
     this.on('resource:endFetching', this._handleEndFetching)
@@ -201,9 +212,11 @@ class JooycarSDK {
    * @private
    * @ignore
    */
-  _addResources(resources) {
+  _addResources(resource) {
     const _private = internal(this)
-    Object.assign(_private._resources, resources)
+    const model = Object.keys(resource)[0]
+    if (!_private._resources[model]) _private._resources[model] = {}
+    Object.assign(_private._resources[model], resource[model])
   }
 
   /**
@@ -214,7 +227,7 @@ class JooycarSDK {
     if (!validSpec(spec))
         throw new Error("Invalid resource specification")
 
-    const resourceName = model || spec.model || spec.command
+    const resourceName = model || spec.model || spec.module
     const resourceAction = action || spec.action || spec.method || 'get'
 
     if (!resourceName) throw new Error("Missing resource name")
@@ -270,13 +283,16 @@ class JooycarSDK {
     _private._resourcesResource = resourceFactory(spec || _private._resourcesSpec)(this)
 
     const resourcesSpecs = await _private._resourcesResource
-    for (let s of resourcesSpecs) {
-      if (!validSpec(s)) {
-        this._logger.warn(`Invalid remote resource specification ${s}`)
-        continue
-      }
 
-      this._pushResource(s)
+    if (resourcesSpecs && resourcesSpecs.endpoints) {
+      for (let s of resourcesSpecs.endpoints) {
+        if (!validSpec(s)) {
+          this._logger.warn(`Invalid remote resource specification`, s)
+          continue
+        }
+        this._logger.debug('Adding resource to resource pool: ', s)
+        this._pushResource(s)
+      }
     }
 
     _private._resourcesLoaded = true
@@ -301,7 +317,7 @@ class JooycarSDK {
     const userResource = resourceFactory(USER_SPEC)(this)
     try {
       const { token } = await userResource.fetch({ email, password })
-      this._key = token
+      this._apiKey = token
       _private._logged = true
       const resources = await this.resources()
       return resources
@@ -322,7 +338,7 @@ class JooycarSDK {
   async logout() {
     const _private = internal(this)
     _private._logged = false
-    this._key = _private._apiKey
+    this._apiKey = _private._apiKey
     const resources = await this.resources()
     return resources
   }
@@ -353,7 +369,8 @@ class JooycarSDK {
    * // false
    */
   isFetching() {
-    return this._currentTransactions.size > 0
+    const _private = internal(this)
+    return _private._currentTransactions.size > 0
   }
 
   /**
@@ -363,8 +380,6 @@ class JooycarSDK {
    * @param {object} context context to which the callback will be called
    */
   on(event, callback, context = this) {
-    this._EventEmitter.on(event, cb, callback, 2)
+    this._EventEmitter.on(event, callback, context, 2)
   }
 }
-
-module.exports = JooycarSDK
