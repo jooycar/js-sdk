@@ -1,5 +1,5 @@
-const request = require('./request')
-const { internalProp } = require('./utils')
+import request from './Request'
+import { internalProp } from './utils'
 
 const privateProps = new WeakMap()
 const internal = internalProp(privateProps)
@@ -7,21 +7,23 @@ const internal = internalProp(privateProps)
 const SILENT_FETCH = false
 const PAGINATION_ENABLED = false
 const PAGE_SIZE = 10
-
+const isObjEmpty = obj => Object.keys(obj).length === 0 && obj.constructor === Object
 const truthy = val => val !== null && val !== undefined
 
-class Resource {
+export default class Resource {
   constructor(sdk, spec) {
     const _private = internal(this)
-    if (!spec.command) throw new Error("Resource spec without command")
+    if (!spec.module) throw new Error("Resource spec without module")
     this.domainPrefix = truthy(spec.domainPrefix) ? spec.domainPrefix : sdk._domainPrefix
     this.host = spec.host || sdk._host
-    this.namespace = truthy(spec.namespace) ? spec.namespace : sdk._apiNamespace
+    this.namespace = truthy(spec.namespace) ? spec.namespace : sdk._namespace
     this.version = truthy(spec.version) ? spec.version : sdk._version
     this.module = truthy(spec.module) ? spec.module : sdk._module
     this.extension = truthy(spec.extension) ? spec.extension : sdk._extension
     this.method = (spec.method || 'GET').toLowerCase()
     this.protocol = spec.protocol || sdk._protocol
+    this.basepath = spec.basepath || sdk._basepath
+    this.headers = {}
     this.port = spec.port || sdk._port
     this.command = spec.command
     this.silentFetch = spec.silentFetch || SILENT_FETCH
@@ -40,6 +42,11 @@ class Resource {
     this._fetchAsync(params)
       .then(result => cb(null, result))
       .catch(cb)
+  }
+
+  setToken(token) {
+    const _private = internal(this)
+    _private._resourceToken = token
   }
 
   addParams(params = {}) {
@@ -76,34 +83,46 @@ class Resource {
     return promise.then.apply(promise, arguments)
   }
 
-  async _makeRequest(json = {}) {
+  setHeader(key, val) {
+    if (typeof key === "object") {
+      for (k in key) {
+        this.setHeader(k, key[k])
+      }
+      return
+    }
+    
+    Object.assign(this.headers, {[key]: val})
+  }
+
+  async _makeRequest(json = null) {
     const _private = internal(this)
-    const headers = this.headers || {}
-    const endpoint = this._endpoint()
-    const req = await request[this.method](endpoint, { json, headers })
+    const token = _private._resourceToken || _private._sdk._apiKey
+    const headers = Object.assign(this.headers, token ? {'Authorization': `Bearer ${token}`} : {})
+    const endpoint = this.endpoint(json)
+    const params = Object.assign({ headers }, this.method === 'get' || isObjEmpty(json) ? {} : {json})
+    const req = await request[this.method](endpoint, params)
     if (_private._sdk._debug) _private._sdk._logger.debug(`Fetching: ${endpoint}`)
     if (_private._sdk._debug) _private._sdk._logger.debug(req)
     const result = req.json
     return result
   }
 
-  _endpoint() {
+  endpoint(params = {}) {
     const protocol = this.protocol
     const prefix = this.domainPrefix ? this.domainPrefix + '.' : ''
     const host = this.host
+    const basepath = this.basepath ? '/' + this.basepath : ''
     const namespace = this.namespace ? '/' + this.namespace : ''
-    const version = this.version ? '/' + this.version : ''
+    const version = this.version ? '/v' + this.version : ''
     const module = this.module ? '/' + this.module : ''
-    const command = this.command
     const port = this.port ? ':' + this.port : ''
     const extension = this.extension ? '.' + this.extension : ''
-    return `${protocol}://${prefix}${host}${port}${namespace}${version}${module}/${command}${extension}`
+    const command = this.command ? '/' + this.command : ''
+    const endpoint = `${protocol}://${prefix}${host}${port}${basepath}${namespace}${version}${module}${command}${extension}`
+    return Object.keys(params).reduce((url, key) => {
+      return url.split(`:${key}`).join(params[key])
+    }, endpoint)
   }
 }
 
-const resourceFactory = spec => sdk => new Resource(sdk, spec)
-
-module.exports = {
-  Resource,
-  resourceFactory
-}
+export const resourceFactory = spec => sdk => new Resource(sdk, spec)

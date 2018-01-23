@@ -10,5 +10,19 @@
     "method": "GET",
     "command": "brands",
     "action": "list"
+  },
+  {
+    "method": "POST",
+    "module": "enduser",
+    "command": "auth/local",
+    "action": "authenticate",
+    "model": "user"
+  },
+  {
+    "method": "GET",
+    "module": "enduser",
+    "command": "trips",
+    "action": "list",
+    "model": "trip"
   }
 ]

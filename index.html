@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <script type="text/javascript" src="dist/jooycar-sdk.min.js"></script>
+  <title>Document</title>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="loading"></div>
+  <script>
+    var apiKey = ''
+    var username = ''
+    var pass = ''
+
+    var SDK = new Jooycar.SDK({
+      debug: false,
+      domainPrefix: 'api-qa',
+      apiKey: apiKey
+    })
+
+    var toggleLoading = function() {
+      var loadingContainer = document.getElementById('loading')
+      if (loadingContainer.innerText === 'loading...') {
+        loadingContainer.innerText = ''
+      } else {
+        loadingContainer.innerText = 'loading...'
+      }
+    }
+
+    var startApp = function(resources) {
+      var appContainer = document.getElementById('app')
+      var tripContainer = document.createElement('ul')
+      resources.trip.list.then(function(response) {
+        for (let trip of response.trips) {
+          var tripElement = document.createElement('li')
+          tripElement.innerText = 'Trip distance: ' + trip.dist
+          tripContainer.appendChild(tripElement)
+        }
+        appContainer.appendChild(tripContainer)
+      })
+    }
+
+    SDK.on('resourcesReady', startApp)
+    SDK.on('startFetching', toggleLoading)
+    SDK.on('endFetching', toggleLoading)
+    SDK.login(username, password)
+  </script>
+</body>
+</html>

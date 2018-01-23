@@ -1,10 +1,13 @@
-const { internalProp } = require('./utils')
+import { internalProp } from './utils'
 
 let _callbacks = {}
 const privateProps = new WeakMap()
 const internal = internalProp(privateProps)
 
-class EventEmitter {
+/**
+ * @ignore
+ */
+export default class EventEmitter {
   constructor(sdk, config = {}) {
     const self = internal(this)
     self._events = new Set()
@@ -138,5 +141,3 @@ class EventEmitter {
     return this.on(event, onceCallback, context, weight)
   }
 }
-
-module.exports = EventEmitter

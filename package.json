@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "docs": "./node_modules/.bin/esdoc",
+    "build": "webpack"
   },
   "author": "",
   "license": "ISC",
@@ -12,5 +13,10 @@
     "caseless": "^0.12.0",
     "node-fetch": "^1.7.3",
     "typedarray-to-buffer": "^3.1.2"
+  },
+  "devDependencies": {
+    "esdoc": "^1.0.4",
+    "esdoc-standard-plugin": "^1.0.0",
+    "webpack": "^3.10.0"
   }
 }

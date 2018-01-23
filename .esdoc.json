@@ -1,0 +1,11 @@
+{
+  "source": "./src",
+  "accessor": {"access": ["public"], "autoPrivate": true},
+  "unexportedIdentifier": {"enable": false},
+  "unexportIdentifier.enable": false,
+  "destination": "./docs",
+  "plugins": [
+    {"name": "esdoc-standard-plugin"},
+    {"name": "./misc/esdocplugin.js"}
+  ]
+}

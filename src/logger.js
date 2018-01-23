@@ -1,4 +1,4 @@
-const logger = SDK => ({
+export const logger = SDK => ({
   info: (...args) => {
     console.log('[INFO]', ...args)
   },
@@ -12,5 +12,3 @@ const logger = SDK => ({
     console.log('[WARN]', ...args)
   }
 })
-
-module.exports = logger
