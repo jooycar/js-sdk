@@ -2,7 +2,7 @@
   "name": "jooycar-web-sdk",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/JooycarSDK.js",
   "scripts": {
     "docs": "./node_modules/.bin/esdoc",
     "build": "webpack"
