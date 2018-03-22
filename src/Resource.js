@@ -1,4 +1,4 @@
-import request from './Request'
+import Request from './Request'
 import { internalProp } from './utils'
 
 const privateProps = new WeakMap()
@@ -59,23 +59,8 @@ export default class Resource {
     _private._params = params
   }
 
-  async _fetchAsync(providedParams = {}) {
-    const _private = internal(this)
-    const sdk = _private._sdk
-    const emitter = sdk._EventEmitter
-    const logger = sdk._logger
-    const transactionId = sdk._getTransactionId()
-    emitter.emit('resource:startFetching', { transactionId })
-    try {
-      const params = Object.assign(_private._params, providedParams)
-      const result = await this._makeRequest(params)
-      emitter.emit('resource:endFetching', { transactionId })
-      return result
-    } catch (err) {
-      logger.error(err)
-      emitter.emit('resource:endFetching', { transactionId })
-      throw (err)
-    }
+  async _fetchAsync(providedParams) {
+    return await this.newRequest(providedParams).json
   }
 
   then() {
@@ -85,7 +70,7 @@ export default class Resource {
 
   setHeader(key, val) {
     if (typeof key === "object") {
-      for (k in key) {
+      for (let k in key) {
         this.setHeader(k, key[k])
       }
       return
@@ -94,17 +79,15 @@ export default class Resource {
     Object.assign(this.headers, {[key]: val})
   }
 
-  async _makeRequest(json = null) {
+  newRequest(providedParams = {}) {
     const _private = internal(this)
     const token = _private._resourceToken || _private._sdk._apiKey
     const headers = Object.assign(this.headers, token ? {'Authorization': `Bearer ${token}`} : {})
-    const endpoint = this.endpoint(json)
-    const params = Object.assign({ headers }, this.method === 'get' || isObjEmpty(json) ? {} : {json})
-    const req = await request[this.method](endpoint, params)
-    if (_private._sdk._debug) _private._sdk._logger.debug(`Fetching: ${endpoint}`)
-    if (_private._sdk._debug) _private._sdk._logger.debug(req)
-    const result = req.json
-    return result
+    const data = Object.assign(_private._params, providedParams);
+    const endpoint = this.endpoint(data)
+    const { method } = this;
+    const params = Object.assign({ headers, method }, method === 'get' || isObjEmpty(data) ? {} : {data})
+    return new Request(_private._sdk, endpoint, params)
   }
 
   endpoint(params = {}) {

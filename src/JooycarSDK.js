@@ -160,8 +160,8 @@ export class SDK {
      */
     this._apiKey = config.apiKey || DEFAULT_KEY
 
-    this.on('resource:startFetching', this._handleStartFetching)
-    this.on('resource:endFetching', this._handleEndFetching)
+    this.on('request:startFetching', this._handleStartFetching)
+    this.on('request:endFetching', this._handleEndFetching)
     this._init()
   }
 
