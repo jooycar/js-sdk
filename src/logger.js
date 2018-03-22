@@ -1,3 +1,7 @@
+/**
+ * @private
+ * @ignore
+ */
 export const logger = SDK => ({
   info: (...args) => {
     console.log('[INFO]', ...args)

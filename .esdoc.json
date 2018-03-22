@@ -4,8 +4,9 @@
   "unexportedIdentifier": {"enable": false},
   "unexportIdentifier.enable": false,
   "destination": "./docs",
+  "excludes": ["EventEmitter|example|logger|utils\\.js$"],
   "plugins": [
     {"name": "esdoc-standard-plugin"},
-    {"name": "./misc/esdocplugin.js"}
+    {"name": "esdoc-ecmascript-proposal-plugin", "option": {"all": true}}
   ]
 }
