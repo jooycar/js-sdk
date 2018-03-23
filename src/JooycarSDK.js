@@ -3,17 +3,64 @@ import { resourceFactory }  from './Resource'
 import EventEmitter from './EventEmitter'
 import {logger} from './logger'
 
+/**
+ * @private
+ * @ignore
+ */
 const HOST = 'jooycar.com'
+/**
+ * @private
+ * @ignore
+ */
 const DOMAIN_PREFIX = 'api01'
+/**
+ * @private
+ * @ignore
+ */
 const BASEPATH = 'api'
+/**
+ * @private
+ * @ignore
+ */
 const VERSION = '1'
+/**
+ * @private
+ * @ignore
+ */
 const NAMESPACE = 'core'
+/**
+ * @private
+ * @ignore
+ */
 const DEFAULT_MODULE = null
+/**
+ * @private
+ * @ignore
+ */
 const PROTOCOL = 'https'
+/**
+ * @private
+ * @ignore
+ */
 const DEFAULT_KEY = null
+/**
+ * @private
+ * @ignore
+ */
 const DEFAULT_EXTENSION = null
+/**
+ * @private
+ * @ignore
+ */
 const DEBUG_MODE = false
+/**
+ * @private
+ * @ignore
+ */
 const DEFAULT_RESOURCES_SPEC = {module: 'resources'}
+/**
+ * @ignore
+ */
 const USER_SPEC = {
   "version": "1",
   "module": "auth",
@@ -24,9 +71,21 @@ const USER_SPEC = {
   "namespace": "enduser"
 }
 
+/**
+ * @private
+ * @ignore
+ */
 const privateProps = new WeakMap()
+/**
+ * @private
+ * @ignore
+ */
 const internal = internalProp(privateProps)
 
+/**
+ * @private
+ * @ignore
+ */
 const validSpec = spec => {
   return(
     typeof spec == 'object' &&
@@ -37,30 +96,31 @@ const validSpec = spec => {
 
 /**
  * JooycarSDK Main class
- * 
+ *
  * An instance of JooycarSDK will provide you all that is required to interact with
  * Jooycar Connected Car Platform. The interaction with the platform is mainly through
  * the [Resource] entity which abstract the different actions that can be performed
  * within the platform
- * 
+ *
  * To load the resources you will need to call the resources() method and it will load
  * asynchronously all the resources that are available based on the provided [apiKey] from
  * the configuration object you provide when instantiating the SDK. Also, when a username
  * and password is used to authenticate a particular instace of the SDK, the resources
  * available for the User authenticated will be autimaticaly loaded into the SDK.
- * 
+ *
  * @example
  * const JooycarSDK = require('./JooycarSDK')
- * 
+ *
  * void async function() {
  *   try {
  *     const SDK = new JooycarSDK({apiKey: ''})
  *     await SDK.login('username', 'password')
  *     const { trip } = await sdk.resources()
- * 
- *     const tripList = await trip.list
+ *
+ *     const tripListResponse = await trip.list.newRequest()
+ *     const tripList = await tripListResponse.json()
  *     console.log(tripList)
- * 
+ *
  *     await sdk.logout()
  *   } catch (error) {
  *     console.error(error)
@@ -160,8 +220,8 @@ export class SDK {
      */
     this._apiKey = config.apiKey || DEFAULT_KEY
 
-    this.on('resource:startFetching', this._handleStartFetching)
-    this.on('resource:endFetching', this._handleEndFetching)
+    this.on('request:startFetching', this._handleStartFetching)
+    this.on('request:endFetching', this._handleEndFetching)
     this._init()
   }
 
@@ -251,9 +311,8 @@ export class SDK {
 
   /**
    * Fetch all resources available for the apiToken or logged User.
-   * @param {Object} spec (Optional) - It is used to load resources using a different specification
+   * @param {Object} [spec] It is used to load resources using a different specification
    * @return {Object} Resources object
-   * 
    * @example
    * const SDK = new JooycarSDK({key: ''});
    * const resources = await SDK.resources();
@@ -364,7 +423,6 @@ export class SDK {
    * const { brands } = await sdk.resources()
    * trip.list.then(() => console.log(SDK.isFetching()))
    * console.log(SDK.isFetching())
-   * 
    * // true
    * // false
    */
