@@ -440,4 +440,14 @@ export class SDK {
   on(event, callback, context = this) {
     this._EventEmitter.on(event, callback, context, 2)
   }
+
+  /**
+   * Sets a new token for Resources usage. It clears the current resource list, so
+   * you should dispose of any resources references.
+   * @param {String} token Token to use as new apiKey
+   */
+  setToken(token) {
+    this._apiKey = token
+    this._flushResources()
+  }
 }
