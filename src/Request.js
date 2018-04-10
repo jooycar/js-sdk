@@ -50,6 +50,21 @@ const makeBody = value => {
 }
 
 /**
+ * @private
+ * @ignore
+ */
+const toQueryString = (obj) => {
+  return Object.keys(obj)
+               .map((k) => {
+                const v = typeof obj[k] !== 'string'
+                  ? encodeURI(JSON.stringify(obj[k]))
+                  : obj[k]
+                 return `${k}=${v}`
+               })
+               .join('&')
+}
+
+/**
  * When a {@link Resource} instance needs to start interaction with the server,
  * it creates a Request instance that manages the data, headers and wraps the
  * Fetch API to make it easier to handle.
@@ -187,18 +202,22 @@ export default class Request {
     let url = this.opts.url
     delete this.opts.url
 
+    if (this.opts.method) {
+      this.opts.method = this.opts.method.toUpperCase()
+    }
+
     if (this.opts.data) {
-      this.opts.body = JSON.stringify(this.opts.data)
-      this.setHeader('content-type', 'application/json')
+      if (this.opts.method === 'GET') {
+        url = `${url}?${toQueryString(this.opts.data)}`
+      } else {
+        this.opts.body = JSON.stringify(this.opts.data)
+        this.setHeader('content-type', 'application/json')
+      }
       delete this.opts.data
     }
 
     if (this.opts.body) {
       this.opts.body = makeBody(this.opts.body)
-    }
-
-    if (this.opts.method) {
-      this.opts.method = this.opts.method.toUpperCase()
     }
 
     this.opts.headers = makeHeaders(this._headers)

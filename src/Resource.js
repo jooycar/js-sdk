@@ -268,7 +268,7 @@ export default class Resource {
     const data = Object.assign(_private._params, providedParams);
     const endpoint = this.endpoint(data)
     const { method } = this;
-    const params = Object.assign({ headers, method }, method === 'get' || isObjEmpty(data) ? {} : {data})
+    const params = Object.assign({ headers, method }, isObjEmpty(data) ? {} : {data})
     return new Request(_private._sdk, endpoint, params)
   }
 
